@@ -122,6 +122,8 @@ let rundenEnde = 0; // Zeitstempel, an dem die laufende Runde endet
 let rundenDauer = 0;
 let countdownRest = 0;
 let letzterTipp = 0;
+let pauseRest = null; // verbleibende Millisekunden, solange die Runde angehalten ist
+let rundenendeNeu = false; // true nur direkt nach dem Ende einer Runde (Glocke, kurze Knopfsperre)
 let audio = null;
 let wachSperre = null;
 
@@ -252,6 +254,30 @@ function starteRunde() {
   // Fester Endzeitpunkt statt Herunterzählen: bleibt genau, auch wenn der
   // Browser den Intervall kurz ausbremst.
   rundenEnde = Date.now() + rundenDauer;
+  pauseRest = null;
+  render();
+  timer = setInterval(tick, 100);
+}
+
+// Unterbrechung (Anruf, App-Wechsel, Bildschirm aus): Die Uhr bleibt stehen,
+// statt im Hintergrund abzulaufen. Die offene Karte wird verdeckt.
+function pausiere() {
+  if (state.phase !== "runde" || pauseRest !== null) return;
+  pauseRest = Math.max(0, rundenEnde - Date.now());
+  stoppeTimer();
+  render();
+}
+
+// Weiter geht es erst auf Antippen – und mit einer neuen Karte, damit niemand
+// die Pause zum Nachdenken über die alte nutzen kann.
+function setzeFort() {
+  if (state.phase !== "runde" || pauseRest === null) return;
+  tonVorbereiten();
+  haltWach();
+  legeZurueck(state.karte);
+  neueKarte();
+  rundenEnde = Date.now() + pauseRest;
+  pauseRest = null;
   render();
   timer = setInterval(tick, 100);
 }
@@ -265,7 +291,7 @@ function tick() {
 // Linke Hälfte = richtig, rechte Hälfte = weiter. Gewertet wird die ganze
 // Karte: erklärt wird einer ihrer Begriffe, danach kommt in jedem Fall eine neue.
 function bewerte(richtig) {
-  if (state.phase !== "runde") return;
+  if (state.phase !== "runde" || pauseRest !== null) return;
   if (Date.now() >= rundenEnde) return beendeRunde(); // Zeit ist um: zählt nicht mehr
 
   if (richtig) {
@@ -301,6 +327,8 @@ function beendeRunde() {
     kommentar: waehleKommentar(state.treffer.length, amZiel, sekunden),
   });
   state.phase = "rundenende";
+  pauseRest = null;
+  rundenendeNeu = true;
   glocke();
   speichern();
   render();
@@ -364,6 +392,7 @@ function starteStechrunde() {
 
 function zuEinstellungen() {
   stoppeTimer();
+  pauseRest = null;
   gibFrei();
   const alt = state;
   state = neuerZustand();
@@ -395,6 +424,7 @@ function tonVorbereiten() {
 // Glockenton: ein Grundton plus leisere Obertöne, die schnell ausklingen.
 function glocke() {
   if (!audio) return;
+  if (audio.state !== "running") audio.resume(); // nach einer Unterbrechung wieder aufwecken
   const obertoene = [[880, 1], [1760, 0.5], [2640, 0.3], [3520, 0.15]];
   for (const versatz of [0, 0.35]) {
     const t = audio.currentTime + versatz;
@@ -442,7 +472,9 @@ function laden() {
     if (!alt || !SPEICHER_PHASEN.includes(alt.phase)) return;
     state = { ...neuerZustand(), ...alt };
     // Falls begriffe.json inzwischen geändert wurde: unbekannte IDs aussortieren
-    state.stapel = state.stapel.filter((id) => begriffe.has(id));
+    // Neu mischen: Sonst kämen nach dem Neuladen mitten in einer Runde dieselben
+    // Karten in derselben Reihenfolge noch einmal.
+    state.stapel = mische(state.stapel.filter((id) => begriffe.has(id)));
   } catch {}
 }
 
@@ -475,9 +507,20 @@ function kartenText(karte) {
   return karte.wahl === null ? karte.begriffe.join(" / ") : karte.begriffe[karte.wahl];
 }
 
+// Gestrichene Karten zählen nicht – weder für die Anzeige noch fürs Log.
+function gewertet(eintrag) {
+  return eintrag.karten.filter((karte) => !karte.gestrichen);
+}
+
+// Kurzer Spielstand, immer mit Teamnamen. In der Stechrunde zeigt er deren
+// eigenen Zähler und sagt das auch dazu.
 function standKurz() {
-  const punkte = state.modus === "stechen" ? state.stechPunkte : state.teams.map((team) => team.punkte);
-  return `<span class="team-0">${punkte[0]}</span> : <span class="team-1">${punkte[1]}</span>`;
+  const stechen = state.modus === "stechen";
+  const punkte = stechen ? state.stechPunkte : state.teams.map((team) => team.punkte);
+  return `${stechen ? "<em>Stechrunde</em>" : ""}
+    <span class="team-0"><small>${name(0)}</small> ${punkte[0]}</span>
+    <i>:</i>
+    <span class="team-1">${punkte[1]} <small>${name(1)}</small></span>`;
 }
 
 const GLOCKE = `<svg class="glocke" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -559,6 +602,13 @@ const ANSICHTEN = {
           </div>
         </header>
         <ol class="karte" id="karte"></ol>
+        ${pauseRest === null
+          ? ""
+          : `<button class="pause" data-aktion="fortsetzen">
+               <b>Pause</b>
+               <span>Tippen zum Fortsetzen</span>
+               <small>Die Uhr steht. Es geht mit einer neuen Karte weiter.</small>
+             </button>`}
       </section>`;
   },
 
@@ -566,14 +616,20 @@ const ANSICHTEN = {
     const eintrag = state.log[state.log.length - 1];
     const schritt = naechsterSchritt();
     const amZiel = state.modus !== "stechen" && hatZiel(state.amZug);
-    const anzahl = eintrag.karten.length;
+    const anzahl = gewertet(eintrag).length;
     const knopf = (karte, i, j) =>
-      `<button class="${karte.wahl === j ? "gewaehlt" : ""}" data-aktion="wahl" data-karte="${i}" data-begriff="${j}">${esc(karte.begriffe[j])}</button>`;
-    const begriffListe = anzahl
+      `<button class="${karte.wahl === j ? "gewaehlt" : ""}" data-aktion="wahl" data-karte="${i}" data-begriff="${j}"
+         ${karte.gestrichen ? "disabled" : ""}>${esc(karte.begriffe[j])}</button>`;
+    // Am Zeilenende: Karte streichen (Fehltipp) bzw. das Streichen zurücknehmen
+    const streichen = (karte, i) =>
+      `<button class="streichen" data-aktion="streichen" data-karte="${i}"
+         aria-label="${karte.gestrichen ? "Karte wieder werten" : "Karte streichen"}">${karte.gestrichen ? "↩" : "✕"}</button>`;
+    const zeile = (karte, i) =>
+      `<li class="${karte.gestrichen ? "gestrichen" : ""}">${karte.begriffe.map((_, j) => knopf(karte, i, j)).join("")}${streichen(karte, i)}</li>`;
+    const begriffListe = eintrag.karten.length
       ? `<p class="hinweis frage">Welcher Begriff wurde erklärt?</p>
-         <ul class="wahl">${eintrag.karten
-           .map((karte, i) => `<li>${karte.begriffe.map((_, j) => knopf(karte, i, j)).join("")}</li>`)
-           .join("")}</ul>`
+         <ul class="wahl">${eintrag.karten.map(zeile).join("")}</ul>
+         <p class="fussnote">Falsch getippt? ✕ streicht die Karte und nimmt den Punkt zurück.</p>`
       : `<p class="hinweis">Keine Karte erraten.</p>`;
     const weiter = {
       bereit: [`Weiterreichen an <b>${schritt.phase === "bereit" ? name(schritt.amZug) : ""}</b>`, "Weiter"],
@@ -582,7 +638,7 @@ const ANSICHTEN = {
       ende: ["", "Zum Ergebnis"],
     }[schritt.phase];
     return `
-      <section class="screen rundenende team-${state.amZug} ${anzahl ? "mit-karten" : ""}">
+      <section class="screen rundenende team-${state.amZug} ${eintrag.karten.length ? "mit-karten" : ""} ${rundenendeNeu ? "neu" : ""}">
         <div class="ecke">${LOG_KNOPF}</div>
         <div class="kopf">
           ${GLOCKE}
@@ -594,7 +650,7 @@ const ANSICHTEN = {
         <div class="liste">${begriffListe}</div>
         <footer class="fuss">
           ${weiter[0] ? `<p class="weiterreichen team-${schritt.amZug}">${weiter[0]}</p>` : ""}
-          <button class="knopf gross" data-aktion="nach-runde" id="weiter-knopf" disabled>${weiter[1]}</button>
+          <button class="knopf gross" data-aktion="nach-runde" id="weiter-knopf" ${rundenendeNeu ? "disabled" : ""}>${weiter[1]}</button>
         </footer>
       </section>`;
   },
@@ -653,10 +709,13 @@ function render() {
   document.getElementById("app").innerHTML = ANSICHTEN[state.phase]();
   if (state.phase === "runde") {
     zeigeKarte();
-    zeigeUhr(rundenEnde - Date.now());
+    zeigeUhr(pauseRest ?? rundenEnde - Date.now());
   }
-  if (state.phase === "rundenende") {
-    // Kurz sperren, damit ein letzter Tipp aus der Runde nicht gleich weiterschaltet.
+  if (state.phase === "rundenende" && rundenendeNeu) {
+    // Nur direkt nach der Runde: kurz sperren, damit ein letzter Tipp nicht gleich
+    // weiterschaltet. Späteres Neuzeichnen (Begriff antippen, Karte streichen)
+    // sperrt nicht erneut und lässt auch die Glocke nicht noch einmal läuten.
+    rundenendeNeu = false;
     setTimeout(() => document.getElementById("weiter-knopf")?.removeAttribute("disabled"), 800);
   }
 }
@@ -688,10 +747,11 @@ function zeigeUhr(rest) {
 function zeigeLog() {
   const overlay = document.getElementById("log-overlay");
   const eintraege = state.log.map((eintrag) => {
-    const liste = eintrag.karten.length ? eintrag.karten.map((karte) => esc(kartenText(karte))).join(" · ") : "–";
+    const karten = gewertet(eintrag);
+    const liste = karten.length ? karten.map((karte) => esc(kartenText(karte))).join(" · ") : "–";
     return `
       <li class="team-${eintrag.team}">
-        <header><b>${esc(eintrag.titel)}</b> · ${name(eintrag.team)} <em>${eintrag.karten.length}</em></header>
+        <header><b>${esc(eintrag.titel)}</b> · ${name(eintrag.team)} <em>${karten.length}</em></header>
         <p>${liste}</p>
       </li>`;
   });
@@ -728,9 +788,22 @@ const AKTIONEN = {
     const karte = state.log[state.log.length - 1].karten[knopf.dataset.karte];
     const j = Number(knopf.dataset.begriff);
     karte.wahl = karte.wahl === j ? null : j;
-    [...knopf.parentElement.children].forEach((k, i) => k.classList.toggle("gewaehlt", i === karte.wahl));
     speichern();
+    render();
   },
+  // Rundenende: eine versehentlich als richtig gewertete Karte streichen. Der Punkt
+  // wird abgezogen; nochmal tippen nimmt das Streichen zurück.
+  streichen(knopf) {
+    const karte = state.log[state.log.length - 1].karten[knopf.dataset.karte];
+    karte.gestrichen = !karte.gestrichen;
+    if (karte.gestrichen) karte.wahl = null;
+    const aenderung = karte.gestrichen ? -1 : 1;
+    if (state.modus === "stechen") state.stechPunkte[state.amZug] += aenderung;
+    else state.teams[state.amZug].punkte += aenderung;
+    speichern();
+    render();
+  },
+  fortsetzen: setzeFort,
   "nach-runde": weiterNachRunde,
   "nach-zwischenstand": weiterNachZwischenstand,
   "stechen-los"() {
@@ -764,6 +837,23 @@ document.addEventListener("pointerdown", (ereignis) => {
   if (Date.now() - letzterTipp < 120) return; // versehentlicher Doppeltipp
   letzterTipp = Date.now();
   bewerte(haelfte.dataset.tipp === "richtig");
+});
+
+// Geht die App in den Hintergrund, hält die Runde an. Ein laufender Countdown
+// springt zurück auf "Bereit?", damit die Runde nicht ungesehen startet.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (state.phase === "runde") {
+      pausiere();
+    } else if (state.phase === "countdown") {
+      stoppeTimer();
+      state.phase = "bereit";
+      state.bestaetigt = true;
+      render();
+    }
+  } else if (wachSperre) {
+    haltWach(); // der Browser hat die Sperre im Hintergrund freigegeben
+  }
 });
 
 async function init() {
