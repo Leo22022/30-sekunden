@@ -11,6 +11,7 @@
 
 // ---------- 1. Einstellungen und Zustand ----------
 
+const VERSION = 10; // steht klein im Hauptmenü; bei jeder Veröffentlichung zusammen mit ?v= in index.html hochzählen
 const RUNDEN_SEKUNDEN = 30;
 const STECH_SEKUNDEN = 60;
 const COUNTDOWN_SEKUNDEN = 3;
@@ -651,6 +652,7 @@ const ANSICHTEN = {
           <div>${ziele}</div>
         </fieldset>
         <button class="knopf gross" data-aktion="start">Spiel starten</button>
+        <p class="version">Version ${VERSION}</p>
       </section>`;
   },
 
@@ -692,17 +694,21 @@ const ANSICHTEN = {
           <div class="balken"><i id="balken"></i></div>
           <div class="uhr-zeile">
             <span>${name(state.amZug)} · <b id="punkte"></b> <em id="runden-plus"></em></span>
+            <button class="pausenknopf" data-aktion="pause" aria-label="Pause">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="6" width="3.4" height="12" rx="1"/><rect x="13.6" y="6" width="3.4" height="12" rx="1"/></svg>
+            </button>
             <strong id="sekunden"></strong>
           </div>
         </header>
         <ol class="karte" id="karte"></ol>
         ${pauseRest === null
           ? ""
-          : `<button class="pause" data-aktion="fortsetzen">
+          : `<div class="pause">
                <b>Pause</b>
-               <span>Tippen zum Fortsetzen</span>
                <small>Die Uhr steht. Es geht mit einer neuen Karte weiter.</small>
-             </button>`}
+               <button class="knopf gross" data-aktion="fortsetzen">Fortsetzen</button>
+               <button class="knopf leise warn" data-aktion="abbrechen">Zum Hauptmenü</button>
+             </div>`}
       </section>`;
   },
 
@@ -897,6 +903,7 @@ const AKTIONEN = {
     speichern();
     render();
   },
+  pause: pausiere,
   fortsetzen: setzeFort,
   "nach-runde": weiterNachRunde,
   "nach-zwischenstand": weiterNachZwischenstand,

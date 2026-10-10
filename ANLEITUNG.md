@@ -58,7 +58,8 @@ Vorbild ist iOS im dunklen Modus, damit sich die App auf dem iPhone wie eine ein
 
 ### Korrektur und Unterbrechung
 - **Karte streichen:** Am Rundenende hat jede gewertete Karte ein ✕. Es streicht die Karte und nimmt den Punkt zurück; nochmal tippen wertet sie wieder. Gestrichene Karten erscheinen nicht im Log. Fällt ein Team dadurch wieder unter den Zielwert, geht das Spiel normal weiter.
-- **Pause:** Geht die App während einer Runde in den Hintergrund (Anruf, App-Wechsel, Bildschirm aus), bleibt die Uhr stehen und die Karte wird verdeckt. Weiter geht es erst auf Antippen, mit einer neuen Karte. Ein laufender Countdown springt zurück auf „Bereit?“.
+- **Pausenknopf:** Während der Runde sitzt oben in der Mitte ein Pausenknopf. Das Pausenfeld bietet „Fortsetzen“ und „Zum Hauptmenü“; der Weg ins Hauptmenü beendet das Spiel nach einer Rückfrage.
+- **Pause von selbst:** Geht die App während einer Runde in den Hintergrund (Anruf, App-Wechsel, Bildschirm aus), bleibt die Uhr stehen und die Karte wird verdeckt. Weiter geht es erst auf Antippen, mit einer neuen Karte. Ein laufender Countdown springt zurück auf „Bereit?“.
 - **Neuladen:** Der Stapel wird beim Laden neu gemischt, damit nach einem Neuladen mitten in der Runde nicht dieselben Karten wiederkommen.
 - **Spielstand:** Der kurze Spielstand nennt immer beide Teamnamen. In der Stechrunde zeigt er deren Zähler und ist mit „Stechrunde“ beschriftet.
 

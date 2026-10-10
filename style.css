@@ -200,6 +200,13 @@ h1 b {
   margin-top: auto;
 }
 
+.version {
+  margin-top: -4px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--tertiaer);
+}
+
 /* Gruppierte Liste: eine abgerundete Fläche, Zeilen durch feine Linien getrennt */
 .gruppe {
   background: var(--flaeche);
@@ -465,7 +472,31 @@ h1 b {
   animation: pochen 0.5s ease-in-out infinite alternate;
 }
 
-/* Pause: deckt die ganze Runde ab, auch die Karte */
+/* Pausenknopf in der Kopfzeile: rund, grau, groß genug für den Finger.
+   Er liegt über den Tipp-Hälften und fängt seine Berührung selbst ab. */
+.pausenknopf {
+  align-self: center;
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--fuellung);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pausenknopf svg {
+  width: 24px;
+  height: 24px;
+}
+.pausenknopf:active {
+  opacity: 0.6;
+}
+
+/* Pausenfeld: deckt die ganze Runde ab, auch die Karte */
 .pause {
   position: absolute;
   inset: 0;
@@ -475,27 +506,22 @@ h1 b {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   padding: 24px;
-  font: inherit;
-  color: var(--text);
   background: var(--grund);
-  border: 0;
-  cursor: pointer;
 }
 .pause b {
   font-size: 34px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
-.pause span {
-  color: var(--sekundaer);
-  animation: pulsieren 1.6s ease-in-out infinite;
-}
 .pause small {
-  margin-top: 12px;
-  font-size: 13px;
+  margin-bottom: 20px;
+  font-size: 15px;
   color: var(--sekundaer);
+}
+.pause .knopf.gross {
+  max-width: 340px;
 }
 
 /* Die Karte: eine gruppierte Liste mit drei Zeilen */
