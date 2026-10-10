@@ -23,6 +23,96 @@ const SPEICHER_KEY = "dreissig-sekunden-spiel-v2";
 // landet deshalb wieder auf "Team X ist dran" – die angefangene Runde zählt nicht.
 const SPEICHER_PHASEN = ["bereit", "rundenende", "zwischenstand", "stechrunde", "ende"];
 
+// Sprüche zum Rundenende, gestaffelt nach der Zahl der gewerteten Karten.
+// "bis" ist die höchste Kartenzahl einer Stufe (gerechnet auf 30 Sekunden).
+// Neue Sprüche einfach in die passende Liste schreiben.
+const KOMMENTARE = [
+  {
+    bis: 0,
+    texte: [
+      "Null Punkte. Immerhin habt ihr nichts falsch gemacht.",
+      "Das war eher eine Schweigeminute.",
+      "Die Karten haben diese Runde gewonnen.",
+      "Dreißig Sekunden Stille – auch eine Leistung.",
+      "War das Erklären oder Pantomime ohne Bewegung?",
+      "Kein Punkt. Aber die Frisur sitzt.",
+      "Das üben wir noch mal. Heimlich.",
+      "Der Wille war da. Sonst leider nichts.",
+    ],
+  },
+  {
+    bis: 2,
+    texte: [
+      "Der Anfang ist gemacht. Ein sehr kleiner Anfang.",
+      "Lieber wenig als gar keine Ausrede.",
+      "Qualität vor Quantität, sagt man.",
+      "Warmgelaufen seid ihr jetzt – hoffentlich.",
+      "Kleinvieh macht auch Mist.",
+      "Das Tempo einer gemütlichen Schildkröte.",
+      "Da war mehr drin. Deutlich mehr.",
+      "Ihr schont euch wohl fürs Finale.",
+    ],
+  },
+  {
+    bis: 4,
+    texte: [
+      "Solide. Nicht aufregend, aber solide.",
+      "Ordentlich – die Konkurrenz zittert noch nicht.",
+      "Gutes Mittelfeld. Mama wäre zufrieden.",
+      "Läuft. Noch nicht rund, aber es läuft.",
+      "Damit kann man arbeiten.",
+      "Eine Runde wie ein Butterbrot: unspektakulär, aber sättigend.",
+      "Nicht schlecht für Menschen ohne Gedankenübertragung.",
+      "Das Fundament steht. Jetzt fehlt nur noch das Haus.",
+    ],
+  },
+  {
+    bis: 6,
+    texte: [
+      "Stark! Da hat jemand zugehört.",
+      "Jetzt wird es ernst für die anderen.",
+      "Ihr versteht euch ja fast blind.",
+      "Das sah verdächtig nach Absprache aus.",
+      "Sauber erklärt, sauber geraten.",
+      "So spielt man das.",
+      "Da saß fast jedes Wort.",
+      "Respekt. Das war richtig gut.",
+    ],
+  },
+  {
+    bis: 8,
+    texte: [
+      "Wow. Habt ihr heimlich geübt?",
+      "Das war ein Feuerwerk.",
+      "Gedankenübertragung ist eigentlich nicht erlaubt.",
+      "Die anderen dürfen jetzt nervös werden.",
+      "Bitte einmal zur Dopingkontrolle.",
+      "Zwei Köpfe, ein Gedanke.",
+      "Das ging schneller, als man mitlesen konnte.",
+      "Ganz großes Kino.",
+    ],
+  },
+  {
+    bis: Infinity,
+    texte: [
+      "Unfassbar. Seid ihr sicher, dass ihr keine Maschinen seid?",
+      "Rekordverdächtig – Autogramme bitte nach dem Spiel.",
+      "Das war nicht mehr fair gegenüber den Karten.",
+      "Legendär. Davon erzählt ihr noch euren Enkeln.",
+      "So schnell kann die App kaum mitzählen.",
+      "Das grenzt an Zauberei.",
+    ],
+  },
+];
+// Wenn die Runde endet, weil das Ziel erreicht ist, sagt die Kartenzahl wenig aus.
+const KOMMENTARE_ZIEL = [
+  "Punktlandung!",
+  "Zielgerade genommen, Zielflagge geschwenkt.",
+  "Mission erfüllt.",
+  "Das Ziel ist erreicht – die Uhr durfte früher Feierabend machen.",
+  "Geschafft. Jetzt erst mal durchatmen.",
+];
+
 let begriffe = new Map(); // id -> { id, begriff, kategorie }
 let state = neuerZustand();
 
@@ -100,6 +190,18 @@ function legeZurueck(ids) {
     const stelle = Math.floor(Math.random() * (Math.floor(state.stapel.length / 2) + 1));
     state.stapel.splice(stelle, 0, id);
   }
+}
+
+// Sucht einen Spruch passend zur Rundenleistung aus. Sprüche, die in diesem
+// Spiel schon gefallen sind, kommen erst wieder, wenn die Stufe aufgebraucht ist.
+function waehleKommentar(karten, amZiel, sekunden) {
+  // Die Stechrunde dauert länger – auf 30 Sekunden umrechnen, damit die Stufen passen.
+  const wert = Math.round((karten * RUNDEN_SEKUNDEN) / sekunden);
+  const texte = amZiel ? KOMMENTARE_ZIEL : KOMMENTARE.find((stufe) => wert <= stufe.bis).texte;
+  const benutzt = state.log.map((eintrag) => eintrag.kommentar);
+  const frei = texte.filter((text) => !benutzt.includes(text));
+  const auswahl = frei.length ? frei : texte;
+  return auswahl[Math.floor(Math.random() * auswahl.length)];
 }
 
 // ---------- 3. Spielablauf ----------
@@ -189,7 +291,15 @@ function beendeRunde() {
   stoppeTimer();
   legeZurueck(state.karte); // die Karte, die beim Ablauf der Zeit offen lag
   state.karte = [];
-  state.log.push({ titel: rundenTitel(), team: state.amZug, karten: state.treffer });
+  const amZiel = state.modus !== "stechen" && hatZiel(state.amZug);
+  const sekunden = state.modus === "stechen" ? STECH_SEKUNDEN : RUNDEN_SEKUNDEN;
+  state.log.push({
+    titel: rundenTitel(),
+    team: state.amZug,
+    karten: state.treffer,
+    // wird hier festgelegt und mitgespeichert, damit er nach dem Neuladen derselbe bleibt
+    kommentar: waehleKommentar(state.treffer.length, amZiel, sekunden),
+  });
   state.phase = "rundenende";
   glocke();
   speichern();
@@ -477,6 +587,7 @@ const ANSICHTEN = {
         <div class="kopf">
           ${GLOCKE}
           <h2>${amZiel ? "Ziel erreicht!" : "Zeit um!"}</h2>
+          ${eintrag.kommentar ? `<p class="kommentar">${esc(eintrag.kommentar)}</p>` : ""}
           <p class="klein">${name(state.amZug)} · +${anzahl} ${anzahl === 1 ? "Karte" : "Karten"}</p>
           <p class="spielstand">${standKurz()}</p>
         </div>

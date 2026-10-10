@@ -57,6 +57,12 @@ Vorbild ist iOS im dunklen Modus, damit sich die App auf dem iPhone wie eine ein
 - Begriffe einer **übersprungenen** Karte (und der Karte, die beim Ablauf der Zeit offen lag) gehen zurück in den Pool und können im laufenden Spiel neu gemischt auf späteren Karten auftreten.
 - **Zuordnung für den Log:** Nach der Runde, ohne Zeitdruck, zeigt der Rundenende-Bildschirm jede gewertete Karte. Der Spieler tippt den erklärten Begriff an. Das ist überspringbar; dann steht die ganze Karte im Log.
 
+### Kommentar zur Runde
+- Am Rundenende steht unter „Zeit um!“ ein kurzer, lustiger Spruch, der zur Zahl der gewerteten Karten passt (sechs Stufen von 0 bis 9 und mehr).
+- Innerhalb eines Spiels wiederholt sich ein Spruch erst, wenn alle seiner Stufe gefallen sind.
+- Die Stechrunde wird auf 30 Sekunden umgerechnet. Endet die Runde, weil das Ziel erreicht ist, kommt ein eigener Spruch.
+- Die Sprüche stehen als Liste `KOMMENTARE` am Anfang von `app.js` und lassen sich dort ergänzen. Es wird kein Dienst aufgerufen.
+
 ### Zwischenstand
 - Nach jeder vollen Runde (beide Teams waren einmal dran) erscheint ein Zwischenstand mit Punkten beider Teams.
 - Von dort geht es mit „Weiter“ in die nächste Runde.
