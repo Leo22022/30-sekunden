@@ -14,7 +14,6 @@ Eine mobile Web-App für ein Team-Erklärspiel (ähnlich Tabu / 30 Seconds). Ein
 - Zielgerät ist ein iPhone 16 Pro (402 × 874 Punkte, Safari):
   - Abstände berücksichtigen Dynamic Island und Home-Balken (`env(safe-area-inset-…)`).
   - Über „Teilen → Zum Home-Bildschirm“ läuft die App im Vollbild ohne Safari-Leisten.
-  - Die Glocke soll auch bei umgelegtem Stummschalter klingen (`navigator.audioSession`).
   - Der Bildschirm bleibt während des Spiels an (Wake Lock). Das geht nur über https oder localhost.
 
 Starten: im Projektordner `npx serve` ausführen und die angezeigte Adresse öffnen. Ein Doppelklick auf `index.html` reicht nicht, weil der Browser die Begriffe-Datei dann nicht laden darf.
@@ -63,10 +62,11 @@ Vorbild ist iOS im dunklen Modus, damit sich die App auf dem iPhone wie eine ein
 - **Neuladen:** Der Stapel wird beim Laden neu gemischt, damit nach einem Neuladen mitten in der Runde nicht dieselben Karten wiederkommen.
 - **Spielstand:** Der kurze Spielstand nennt immer beide Teamnamen. In der Stechrunde zeigt er deren Zähler und ist mit „Stechrunde“ beschriftet.
 
-### Haptischer Countdown
-- In den letzten 5 Sekunden einer Runde gibt das Handy einmal pro Sekunde eine haptische Rückmeldung, am Rundenende eine längere.
-- Android-Browser vibrieren über `navigator.vibrate`. Safari auf dem iPhone unterstützt das nicht; dort nutzt die App einen Umweg über einen unsichtbaren iOS-Schalter, der beim Umlegen kurz tickt. Ob das auf dem eigenen Gerät spürbar ist, muss man ausprobieren.
-- Der Glockenton am Rundenende ist eingebaut, war auf dem iPhone bisher aber nicht zu hören. Die Fehlersuche ist zurückgestellt.
+### Töne und Countdown
+- **Töne einer Runde:** drei Töne zum 3-2-1-Countdown, je ein Ton in den letzten 5 Sekunden und die Glocke am Rundenende.
+- **Vorab eingeplant:** Das iPhone spielt nur Töne, die während einer Berührung in Auftrag gegeben werden. Deshalb plant die App alle Töne beim Antippen von „Bereit?“ auf die Sekunde genau vor. Bei Pause, erreichtem Ziel oder Abbruch wird der Rest gestrichen; nach einer Pause wird beim Antippen neu geplant.
+- **Stummschalter:** Ist das iPhone stummgeschaltet, bleiben auch die Töne der App stumm. Der Versuch, das zu umgehen, hat die Tonausgabe ganz abgeschaltet und ist wieder entfernt.
+- **Vibration:** Nur auf Android (`navigator.vibrate`), in den letzten 5 Sekunden zusätzlich zum Ton. Safari auf dem iPhone erlaubt Webseiten kein Vibrieren; am Gerät geprüft, auch der Umweg über einen iOS-Schalter wirkt nicht.
 
 ### Kommentar zur Runde
 - Am Rundenende steht unter „Zeit um!“ ein kurzer, lustiger Spruch, der zur Zahl der gewerteten Karten passt (sechs Stufen von 0 bis 9 und mehr).

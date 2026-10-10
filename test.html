@@ -42,7 +42,8 @@
   <div class="gruppe">
     <button data-test="e"><span><b>E</b> · Glocke sofort</span></button>
     <button data-test="f"><span><b>F</b> · Glocke nach 3 Sekunden</span></button>
-    <button data-test="g"><span><b>G</b> · Glocke sofort, trotz Stummschalter</span></button>
+    <button data-test="h"><span><b>H</b> · Glocke in 3 Sekunden, vorab geplant</span></button>
+    <button data-test="i"><span><b>I</b> · 5 Töne im Sekundentakt, dann Glocke – vorab geplant</span></button>
   </div>
 
   <h2>Was das Gerät meldet</h2>
@@ -75,8 +76,20 @@
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       if (audio.state !== "running") audio.resume();
     }
-    function glocke() {
-      const t = audio.currentTime;
+    function piep(in_sekunden) {
+      const t = audio.currentTime + 0.03 + in_sekunden;
+      const oszillator = audio.createOscillator();
+      const lautstaerke = audio.createGain();
+      oszillator.frequency.value = 1100;
+      lautstaerke.gain.setValueAtTime(0.0001, t);
+      lautstaerke.gain.exponentialRampToValueAtTime(0.3, t + 0.01);
+      lautstaerke.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      oszillator.connect(lautstaerke).connect(audio.destination);
+      oszillator.start(t);
+      oszillator.stop(t + 0.2);
+    }
+    function glocke(in_sekunden = 0) {
+      const t = audio.currentTime + 0.03 + in_sekunden;
       for (const [frequenz, anteil] of [[880, 1], [1760, 0.5], [2640, 0.3]]) {
         const oszillator = audio.createOscillator();
         const lautstaerke = audio.createGain();
@@ -88,7 +101,7 @@
         oszillator.start(t);
         oszillator.stop(t + 1.7);
       }
-      melde("Glocke gespielt – Zustand: " + audio.state);
+      melde("Glocke " + (in_sekunden ? "eingeplant" : "gespielt") + " – Zustand: " + audio.state);
     }
 
     const TESTS = {
@@ -97,11 +110,12 @@
       d() { for (let i = 0; i < 5; i++) setTimeout(() => { tick(); melde("D Tick " + (i + 1)); }, 1000 * (i + 1)); },
       e() { tonBereit(); glocke(); },
       f() { tonBereit(); melde("F: Glocke kommt in 3 Sekunden …"); setTimeout(glocke, 3000); },
-      g() {
-        if (navigator.audioSession) navigator.audioSession.type = "playback";
-        else melde("G: audioSession gibt es auf diesem Gerät nicht");
+      h() { tonBereit(); glocke(3); melde("H: Glocke ist für in 3 Sekunden eingeplant"); },
+      i() {
         tonBereit();
-        glocke();
+        for (let s = 0; s < 5; s++) piep(s);
+        glocke(5);
+        melde("I: 5 Töne und Glocke eingeplant");
       },
     };
     document.addEventListener("click", (ereignis) => {

@@ -17,7 +17,7 @@ const COUNTDOWN_SEKUNDEN = 3;
 const BEGRIFFE_PRO_KARTE = 3; // zum Testen auch 5 möglich – sonst ist nichts anzupassen
 const ZIELWERTE = [20, 30, 40, 50, 100];
 const STANDARD_ZIEL = 30;
-const HAPTIK_AB_SEKUNDE = 5; // in den letzten 5 Sekunden vibriert das Handy einmal pro Sekunde
+const HAPTIK_AB_SEKUNDE = 5; // in den letzten 5 Sekunden kommt je Sekunde ein Ton (auf Android zusätzlich Vibration)
 const SPEICHER_KEY = "dreissig-sekunden-spiel-v2";
 
 // Nur in diesen Phasen wird gespeichert. Wer mitten in einer Runde neu lädt,
@@ -233,6 +233,7 @@ function stoppeTimer() {
 
 function starteCountdown() {
   tonVorbereiten();
+  planeToene(state.modus === "stechen" ? STECH_SEKUNDEN : RUNDEN_SEKUNDEN, true);
   haltWach();
   state.phase = "countdown";
   countdownRest = COUNTDOWN_SEKUNDEN;
@@ -267,6 +268,7 @@ function pausiere() {
   if (state.phase !== "runde" || pauseRest !== null) return;
   pauseRest = Math.max(0, rundenEnde - Date.now());
   stoppeTimer();
+  brichToeneAb();
   render();
 }
 
@@ -279,6 +281,7 @@ function setzeFort() {
   legeZurueck(state.karte);
   neueKarte();
   rundenEnde = Date.now() + pauseRest;
+  planeToene(pauseRest / 1000, false);
   pauseRest = null;
   render();
   timer = setInterval(tick, 100);
@@ -288,7 +291,7 @@ function tick() {
   const rest = rundenEnde - Date.now();
   if (rest <= 0) return beendeRunde();
   zeigeUhr(rest);
-  // Haptischer Countdown: einmal je Sekundenwechsel bei 5, 4, 3, 2, 1
+  // Vibration einmal je Sekundenwechsel bei 5, 4, 3, 2, 1 (die Töne dazu sind vorab eingeplant)
   const sekunde = Math.ceil(rest / 1000);
   if (sekunde !== letzteSekunde) {
     letzteSekunde = sekunde;
@@ -401,6 +404,7 @@ function starteStechrunde() {
 
 function zuEinstellungen() {
   stoppeTimer();
+  brichToeneAb();
   pauseRest = null;
   gibFrei();
   const alt = state;
@@ -415,70 +419,120 @@ function zuEinstellungen() {
 }
 
 // ---------- 4. Ton ----------
+//
+// Das iPhone spielt nur Töne, die während einer Berührung in Auftrag gegeben
+// werden. Ein Ton, den erst die ablaufende Uhr auslöst, bleibt dort stumm.
+// Deshalb werden alle Töne einer Runde schon beim Antippen von "Bereit?"
+// vorab auf die Sekunde genau eingeplant: die drei Töne des Countdowns, je ein
+// Ton in den letzten fünf Sekunden und die Glocke am Ende. Endet die Runde
+// anders als geplant (Pause, Ziel erreicht, Abbruch), wird der Rest gestrichen.
 
-// Browser erlauben Ton erst nach einer Berührung – deshalb wird der
-// AudioContext beim Tippen auf "Start" angelegt, nicht beim Laden der Seite.
+let geplant = []; // vorab eingeplante Töne: { zeit, glocke, knoten[] }
+let grundton = null; // unhörbare Dauerquelle, hält die Tonausgabe während des Spiels wach
+
 function tonVorbereiten() {
   try {
-    // iPhone: ohne diese Angabe schaltet der Stummschalter an der Seite auch die Glocke stumm.
-    if (navigator.audioSession) navigator.audioSession.type = "playback";
     audio = audio || new (window.AudioContext || window.webkitAudioContext)();
     // "running" ist der einzige Zustand, in dem Ton herauskommt (iOS kennt auch "interrupted").
     if (audio.state !== "running") audio.resume();
+    if (!grundton) {
+      grundton = audio.createOscillator();
+      const stumm = audio.createGain();
+      stumm.gain.value = 0.00001;
+      grundton.connect(stumm).connect(audio.destination);
+      grundton.start();
+    }
   } catch {
     audio = null;
   }
 }
 
-// Glockenton: ein Grundton plus leisere Obertöne, die schnell ausklingen.
-function glocke() {
-  if (!audio) return;
-  if (audio.state !== "running") audio.resume(); // nach einer Unterbrechung wieder aufwecken
-  const obertoene = [[880, 1], [1760, 0.5], [2640, 0.3], [3520, 0.15]];
-  for (const versatz of [0, 0.35]) {
-    const t = audio.currentTime + versatz;
-    for (const [frequenz, anteil] of obertoene) {
-      const oszillator = audio.createOscillator();
-      const lautstaerke = audio.createGain();
-      oszillator.frequency.value = frequenz;
-      lautstaerke.gain.setValueAtTime(0.0001, t);
-      lautstaerke.gain.exponentialRampToValueAtTime(0.3 * anteil, t + 0.01);
-      lautstaerke.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
-      oszillator.connect(lautstaerke).connect(audio.destination);
-      oszillator.start(t);
-      oszillator.stop(t + 1.7);
-    }
-  }
+// Ein einzelner Ton zur Zeit "zeit" (in Sekunden der Audio-Uhr). Gibt den Knoten
+// zurück, damit er sich wieder streichen lässt.
+function spieleTon(zeit, frequenz, dauer, laut) {
+  const oszillator = audio.createOscillator();
+  const lautstaerke = audio.createGain();
+  oszillator.frequency.value = frequenz;
+  lautstaerke.gain.setValueAtTime(0.0001, zeit);
+  lautstaerke.gain.exponentialRampToValueAtTime(laut, zeit + 0.01);
+  lautstaerke.gain.exponentialRampToValueAtTime(0.0001, zeit + dauer);
+  oszillator.connect(lautstaerke).connect(audio.destination);
+  oszillator.start(zeit);
+  oszillator.stop(zeit + dauer + 0.1);
+  return oszillator;
 }
 
-// Haptische Rückmeldung. Android-Browser kennen dafür navigator.vibrate.
-// Safari auf dem iPhone kennt es nicht; dort gibt es nur einen Umweg: Ein
-// Schalter im iOS-Stil (<input type="checkbox" switch>) tickt beim Umlegen
-// spürbar. Die App legt deshalb einen unsichtbaren Schalter an und legt ihn um.
-// Das ist ein kurzes Ticken, kein kräftiges Vibrieren – mehr erlaubt iOS
-// einer Webseite nicht. Kennt ein Gerät beides nicht, passiert nichts.
+// Glockenton: zwei Schläge, jeder ein Grundton plus leisere Obertöne, die ausklingen.
+function spieleGlocke(zeit) {
+  const knoten = [];
+  for (const versatz of [0, 0.35]) {
+    for (const [frequenz, anteil] of [[880, 1], [1760, 0.5], [2640, 0.3], [3520, 0.15]]) {
+      knoten.push(spieleTon(zeit + versatz, frequenz, 1.6, 0.3 * anteil));
+    }
+  }
+  return knoten;
+}
+
+// Plant alle Töne für eine Runde, die noch "restSekunden" dauert. Muss aus
+// einer Berührung heraus aufgerufen werden (Start der Runde, Ende einer Pause).
+function planeToene(restSekunden, mitCountdown) {
+  if (!audio) return;
+  try {
+    brichToeneAb();
+    let start = audio.currentTime + 0.03;
+    if (mitCountdown) {
+      for (let i = 0; i < COUNTDOWN_SEKUNDEN; i++) {
+        geplant.push({ zeit: start + i, glocke: false, knoten: [spieleTon(start + i, 660, 0.14, 0.25)] });
+      }
+      start += COUNTDOWN_SEKUNDEN;
+    }
+    for (let s = HAPTIK_AB_SEKUNDE; s >= 1; s--) {
+      if (s >= restSekunden) continue; // nach einer Pause sind es vielleicht weniger als fünf
+      const zeit = start + restSekunden - s;
+      geplant.push({ zeit, glocke: false, knoten: [spieleTon(zeit, 1100, 0.09, 0.3)] });
+    }
+    const ende = start + restSekunden;
+    geplant.push({ zeit: ende, glocke: true, knoten: spieleGlocke(ende) });
+  } catch {}
+}
+
+// Streicht alle Töne, die noch nicht begonnen haben. Gibt zurück, ob die
+// eingeplante Glocke gerade schon läutet – dann braucht es keine zweite.
+function brichToeneAb() {
+  if (!audio) return false;
+  const jetzt = audio.currentTime;
+  let glockeLaeutet = false;
+  for (const ton of geplant) {
+    if (ton.zeit > jetzt + 0.05) {
+      for (const knoten of ton.knoten) {
+        try {
+          knoten.stop();
+        } catch {}
+      }
+    } else if (ton.glocke && jetzt - ton.zeit < 1) {
+      glockeLaeutet = true;
+    }
+  }
+  geplant = [];
+  return glockeLaeutet;
+}
+
+// Rundenende: Die Glocke ist normalerweise schon eingeplant. Nur wenn die
+// Runde vorzeitig endet (Ziel erreicht), wird sie hier sofort angeschlagen.
+function glocke() {
+  if (!audio) return;
+  try {
+    if (audio.state !== "running") audio.resume(); // nach einer Unterbrechung wieder aufwecken
+    if (!brichToeneAb()) spieleGlocke(audio.currentTime);
+  } catch {}
+}
+
+// Vibration zusätzlich zum Ton. Das können nur Android-Browser
+// (navigator.vibrate); Safari auf dem iPhone erlaubt Webseiten kein Vibrieren –
+// dort übernehmen die Töne den Countdown.
 function haptik(lang = false) {
   try {
-    if (navigator.vibrate) {
-      navigator.vibrate(lang ? [200, 80, 200] : 70);
-      return;
-    }
-    const tick = () => {
-      const label = document.createElement("label");
-      label.style.display = "none";
-      const schalter = document.createElement("input");
-      schalter.type = "checkbox";
-      schalter.setAttribute("switch", "");
-      label.appendChild(schalter);
-      document.head.appendChild(label);
-      label.click();
-      label.remove();
-    };
-    tick();
-    if (lang) {
-      setTimeout(tick, 120);
-      setTimeout(tick, 240);
-    }
+    navigator.vibrate?.(lang ? [200, 80, 200] : 70);
   } catch {}
 }
 
@@ -887,6 +941,7 @@ document.addEventListener("visibilitychange", () => {
       pausiere();
     } else if (state.phase === "countdown") {
       stoppeTimer();
+      brichToeneAb();
       state.phase = "bereit";
       state.bestaetigt = true;
       render();
