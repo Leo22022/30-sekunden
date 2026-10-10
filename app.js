@@ -370,6 +370,11 @@ function standKurz() {
   return `<span class="team-0">${punkte[0]}</span> : <span class="team-1">${punkte[1]}</span>`;
 }
 
+const GLOCKE = `<svg class="glocke" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M12 3v1.5"/><path d="M6.5 16v-5a5.5 5.5 0 0 1 11 0v5l1.5 2.2h-14z"/><path d="M10.2 20.4a1.9 1.9 0 0 0 3.6 0"/>
+</svg>`;
+const ZIER = `<div class="zier" aria-hidden="true">◆</div>`;
 const LOG_KNOPF = `<button class="knopf leise" data-aktion="log">Log</button>`;
 
 const ANSICHTEN = {
@@ -471,7 +476,7 @@ const ANSICHTEN = {
       <section class="screen rundenende team-${state.amZug} ${anzahl ? "mit-karten" : ""}">
         <div class="ecke">${LOG_KNOPF}</div>
         <div class="kopf">
-          <div class="glocke">🔔</div>
+          ${GLOCKE}
           <h2>${amZiel ? "Ziel erreicht!" : "Zeit um!"}</h2>
           <p class="klein">${name(state.amZug)} · +${anzahl} ${anzahl === 1 ? "Karte" : "Karten"}</p>
           <p class="spielstand">${standKurz()}</p>
@@ -505,7 +510,7 @@ const ANSICHTEN = {
       : `Beide Teams haben ${state.ziel} Punkte erreicht.`;
     return `
       <section class="screen stechrunde">
-        <div class="glocke">⚔️</div>
+        ${ZIER}
         <h2>${rundenTitel()}</h2>
         <p class="hinweis">${text}</p>
         <p class="hinweis">Beide starten bei 0 und spielen je <b>${STECH_SEKUNDEN} Sekunden</b>.
@@ -523,7 +528,7 @@ const ANSICHTEN = {
       : "";
     return `
       <section class="screen ende team-${state.gewinner}">
-        <div class="glocke">🏆</div>
+        ${ZIER}
         <p class="klein">Gewonnen hat</p>
         <h2>${name(state.gewinner)}</h2>
         ${standHtml()}

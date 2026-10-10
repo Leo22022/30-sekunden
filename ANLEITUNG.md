@@ -19,6 +19,14 @@ Eine mobile Web-App für ein Team-Erklärspiel (ähnlich Tabu / 30 Seconds). Ein
 
 Starten: im Projektordner `npx serve` ausführen und die angezeigte Adresse öffnen. Ein Doppelklick auf `index.html` reicht nicht, weil der Browser die Begriffe-Datei dann nicht laden darf.
 
+## Optik
+Vorbild ist die Schach-App, übertragen auf einen dunklen Grund.
+- **Farben:** Die Palette geht von Indigo aus – dunkles Indigo als Grund, hellere Indigotöne für Flächen und Linien, fast weiße Schrift. Kräftiges Indigo ist der einzige Akzent (Zierbalken, Hauptknopf). Kein Gelb.
+- **Teamfarben:** Team 1 Koralle, Team 2 Türkis – ein warmer und ein kühler Ton, damit sie sich auch bei Farbfehlsichtigkeit unterscheiden. Der Teamname steht immer dabei.
+- **Schrift:** Cormorant Garamond (Antiqua) für alles, was gelesen wird; Inter (Grotesk) für Zahlen und Labels. Beide kommen von Google Fonts; ohne Netz springen Georgia und die Systemschrift ein.
+- **Formen:** Flächen ohne Rahmen, feine Linien statt Kästen, Labels in gesperrten Großbuchstaben, ein Zierbalken am oberen Rand. Auswahl wird durch eine Linie unter dem Text angezeigt.
+- Alle Farben und Schriften stehen als Variablen am Anfang von `style.css`. Die Optik hat keinen Einfluss auf die Spiellogik.
+
 ## Spielablauf
 
 ### Einstellungen (Startbildschirm)
