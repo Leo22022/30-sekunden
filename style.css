@@ -1,0 +1,657 @@
+/* 30 Sekunden – mobile-first, Hochformat, dunkel (liest sich abends am Tisch besser) */
+
+:root {
+  --grund: #15131f;
+  --flaeche: #221f33;
+  --linie: #37324f;
+  --text: #f4f1ff;
+  --gedimmt: #a39fc0;
+  --team-0: #ffc93c; /* Team 1: gelb */
+  --team-1: #4fd8ff; /* Team 2: blau */
+  --richtig: #3ddc97;
+  --weiter: #8a86a8;
+  --warn: #ff6b6b;
+  --akzent: var(--team-0);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--grund);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Kein Markieren, kein Zoomen, kein Gummiband-Scrollen beim hektischen Tippen */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* iPhone: kein Menü bei langem Druck */
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+.team-0 {
+  --akzent: var(--team-0);
+}
+.team-1 {
+  --akzent: var(--team-1);
+}
+
+/* ---------- Grundgerüst jedes Bildschirms ---------- */
+
+.screen {
+  position: relative;
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+  /* env(safe-area-…): Abstand zu Dynamic Island oben und Home-Balken unten */
+  padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+h1 b {
+  color: var(--team-0);
+}
+
+h2 {
+  font-size: clamp(2.2rem, 11vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--akzent);
+  overflow-wrap: anywhere;
+}
+
+.unter,
+.hinweis {
+  color: var(--gedimmt);
+  line-height: 1.5;
+}
+.hinweis b {
+  color: var(--text);
+}
+
+.klein {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  color: var(--gedimmt);
+}
+
+/* ---------- Knöpfe ---------- */
+
+.knopf {
+  font: inherit;
+  font-weight: 700;
+  color: var(--grund);
+  background: var(--akzent);
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: transform 0.08s, opacity 0.2s;
+}
+.knopf:active {
+  transform: scale(0.97);
+}
+.knopf:disabled {
+  opacity: 0.35;
+}
+.knopf.gross {
+  width: 100%;
+  font-size: 1.25rem;
+  padding: 18px 20px;
+}
+.knopf.leise {
+  background: transparent;
+  color: var(--gedimmt);
+  border: 1px solid var(--linie);
+}
+.knopf.warn {
+  color: var(--warn);
+  width: 100%;
+}
+
+.knoepfe {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ecke {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+}
+
+/* ---------- Einstellungen ---------- */
+
+.einstellungen {
+  align-items: stretch;
+}
+.einstellungen .unter {
+  margin-bottom: 12px;
+}
+
+.feld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--akzent);
+  font-weight: 700;
+}
+.feld input {
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 2px solid var(--linie);
+  border-radius: 12px;
+  padding: 14px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.feld input:focus {
+  outline: none;
+  border-color: var(--akzent);
+}
+
+.ziele {
+  border: 0;
+  padding: 0;
+  margin: 8px 0;
+  text-align: left;
+}
+.ziele legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gedimmt);
+}
+.ziele > div {
+  display: flex;
+  gap: 8px;
+}
+.ziel {
+  flex: 1;
+}
+.ziel input {
+  position: absolute;
+  opacity: 0;
+}
+.ziel span {
+  display: block;
+  text-align: center;
+  padding: 14px 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: var(--flaeche);
+  border: 2px solid var(--linie);
+  border-radius: 12px;
+}
+.ziel input:checked + span {
+  background: var(--team-0);
+  border-color: var(--team-0);
+  color: var(--grund);
+}
+
+/* ---------- "Team X ist dran" und Countdown ---------- */
+
+/* Ein Schein in der Teamfarbe: auch aus dem Augenwinkel ist klar, wer dran ist */
+.bereit,
+.countdown {
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--akzent) 20%, transparent), transparent 62%);
+}
+.bereit {
+  cursor: pointer;
+}
+.bereit .hinweis:last-child {
+  margin-top: 24px;
+  animation: pulsieren 1.6s ease-in-out infinite;
+}
+
+.spielstand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gedimmt);
+  font-variant-numeric: tabular-nums;
+}
+.spielstand span {
+  color: var(--akzent);
+}
+
+.countdown .zahl {
+  font-size: 12rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--akzent);
+  animation: aufploppen 1s ease-out;
+}
+
+/* ---------- Runde ---------- */
+
+.runde {
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0;
+  height: 100dvh;
+  overflow: hidden;
+  /* Uhr und Karte liegen über den beiden Tipp-Hälften und lassen Berührungen durch */
+  pointer-events: none;
+}
+
+.haelften {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: auto;
+  /* Während der Runde kein Scrollen, Zoomen oder Wischen – nur Tippen */
+  touch-action: none;
+}
+.haelfte {
+  flex: 1;
+  border: 0;
+  padding: 0 0 calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.haelfte.richtig {
+  color: var(--richtig);
+  background: linear-gradient(to top, rgba(61, 220, 151, 0.22), rgba(61, 220, 151, 0.04));
+  border-right: 1px solid var(--linie);
+}
+.haelfte.weiter {
+  color: var(--weiter);
+  background: linear-gradient(to top, rgba(138, 134, 168, 0.2), rgba(138, 134, 168, 0.03));
+}
+.haelfte.richtig:active {
+  background: rgba(61, 220, 151, 0.4);
+}
+.haelfte.weiter:active {
+  background: rgba(138, 134, 168, 0.4);
+}
+
+.uhr {
+  position: relative;
+  width: 100%;
+  padding: calc(12px + env(safe-area-inset-top)) 20px 0;
+}
+.balken {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--flaeche);
+  overflow: hidden;
+}
+.balken i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--akzent);
+  transition: width 0.1s linear;
+}
+.uhr-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 8px;
+  color: var(--gedimmt);
+  font-weight: 600;
+}
+.uhr-zeile b {
+  color: var(--akzent);
+}
+.uhr-zeile strong {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.uhr-zeile em {
+  font-style: normal;
+  color: var(--richtig);
+}
+.uhr-zeile strong.knapp {
+  color: var(--warn);
+  animation: pochen 0.5s ease-in-out infinite alternate;
+}
+
+.karte {
+  position: relative;
+  list-style: none;
+  width: calc(100% - 32px);
+  /* etwas oberhalb der Mitte: unten bleibt Platz für die Daumen */
+  margin: auto 16px;
+  top: -4dvh;
+  padding: 8px 18px;
+  background: var(--flaeche);
+  border: 2px solid var(--linie);
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.karte li {
+  padding: 26px 0;
+  font-size: clamp(1.5rem, 7.2vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.15;
+  border-bottom: 1px solid var(--linie);
+  overflow-wrap: anywhere;
+}
+.karte li:last-child {
+  border-bottom: 0;
+}
+/* Neue Karte: zeigt kurz an, wie die vorige gewertet wurde */
+.karte.nach-richtig {
+  animation: karte-richtig 0.35s ease-out;
+}
+.karte.nach-weiter {
+  animation: karte-weiter 0.25s ease-out;
+}
+
+/* ---------- Rundenende ---------- */
+
+.glocke {
+  font-size: 4.5rem;
+  line-height: 1;
+  transform-origin: 50% 10%;
+}
+.rundenende .glocke {
+  animation: laeuten 1.4s ease-out;
+}
+
+/* Gewertete Karten: je Zeile eine Karte, der erklärte Begriff wird angetippt */
+.wahl {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* Eine Zeile = eine Karte, deshalb gemeinsamer Rahmen um ihre drei Begriffe */
+.wahl li {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 14px;
+}
+.wahl button {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--gedimmt);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 4px;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.wahl button.gewaehlt {
+  background: var(--akzent);
+  color: var(--grund);
+  font-weight: 800;
+}
+
+/* Mit Kartenliste rückt der Kopf zusammen, damit die Liste Platz hat */
+.rundenende.mit-karten {
+  justify-content: flex-start;
+  gap: 10px;
+}
+.rundenende.mit-karten .glocke {
+  font-size: 3rem;
+}
+.rundenende.mit-karten h2 {
+  font-size: 2.2rem;
+}
+.frage {
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+/* Der nächste Schritt bleibt am unteren Rand stehen, auch wenn die Liste lang ist */
+.fuss {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  margin-top: auto;
+  padding: 28px 0 calc(8px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--grund) 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rundenende:not(.mit-karten) .fuss {
+  margin-top: 16px;
+}
+
+.weiterreichen {
+  font-size: 1.05rem;
+  color: var(--gedimmt);
+}
+.weiterreichen b {
+  display: block;
+  font-size: 1.9rem;
+  line-height: 1.2;
+  color: var(--akzent);
+}
+
+/* ---------- Punktestand ---------- */
+
+/* Bildschirme, die beiden Teams gehören, bleiben farblich neutral */
+.zwischenstand h2,
+.stechrunde h2 {
+  color: var(--text);
+}
+
+.stand {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stand small {
+  color: var(--gedimmt);
+}
+.stand-zeile {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--flaeche);
+  border-radius: 14px;
+  overflow: hidden;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.stand-zeile b {
+  font-size: 2rem;
+  color: var(--akzent);
+}
+/* Fortschritt zum Zielwert als dünner Balken am unteren Rand */
+.stand-zeile i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 5px;
+  background: var(--akzent);
+}
+
+/* ---------- Log ---------- */
+
+#log-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--grund);
+  overflow-y: auto;
+  z-index: 10;
+}
+.log {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.log > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log h3 {
+  font-size: 1.4rem;
+}
+.log ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.log li {
+  background: var(--flaeche);
+  border-left: 4px solid var(--akzent);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.log li header {
+  display: flex;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--gedimmt);
+}
+.log li header b {
+  color: var(--text);
+}
+.log li header em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--akzent);
+}
+.log li p {
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* ---------- Animationen ---------- */
+
+@keyframes pulsieren {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes aufploppen {
+  0% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+}
+
+@keyframes pochen {
+  to {
+    transform: scale(1.18);
+  }
+}
+
+@keyframes karte-richtig {
+  0% {
+    transform: scale(0.94);
+    border-color: var(--richtig);
+    box-shadow: 0 0 0 8px rgba(61, 220, 151, 0.35);
+  }
+}
+
+@keyframes karte-weiter {
+  0% {
+    transform: translateX(36px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes laeuten {
+  0% {
+    transform: rotate(0);
+  }
+  10% {
+    transform: rotate(28deg);
+  }
+  25% {
+    transform: rotate(-24deg);
+  }
+  40% {
+    transform: rotate(18deg);
+  }
+  55% {
+    transform: rotate(-12deg);
+  }
+  70% {
+    transform: rotate(7deg);
+  }
+  85% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+  }
+}
