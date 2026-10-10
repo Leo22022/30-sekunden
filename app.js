@@ -17,6 +17,7 @@ const COUNTDOWN_SEKUNDEN = 3;
 const BEGRIFFE_PRO_KARTE = 3; // zum Testen auch 5 möglich – sonst ist nichts anzupassen
 const ZIELWERTE = [20, 30, 40, 50, 100];
 const STANDARD_ZIEL = 30;
+const HAPTIK_AB_SEKUNDE = 5; // in den letzten 5 Sekunden vibriert das Handy einmal pro Sekunde
 const SPEICHER_KEY = "dreissig-sekunden-spiel-v2";
 
 // Nur in diesen Phasen wird gespeichert. Wer mitten in einer Runde neu lädt,
@@ -122,6 +123,7 @@ let rundenEnde = 0; // Zeitstempel, an dem die laufende Runde endet
 let rundenDauer = 0;
 let countdownRest = 0;
 let letzterTipp = 0;
+let letzteSekunde = 0; // zuletzt angezeigte Sekunde – für den haptischen Countdown
 let pauseRest = null; // verbleibende Millisekunden, solange die Runde angehalten ist
 let rundenendeNeu = false; // true nur direkt nach dem Ende einer Runde (Glocke, kurze Knopfsperre)
 let audio = null;
@@ -284,8 +286,14 @@ function setzeFort() {
 
 function tick() {
   const rest = rundenEnde - Date.now();
-  if (rest <= 0) beendeRunde();
-  else zeigeUhr(rest);
+  if (rest <= 0) return beendeRunde();
+  zeigeUhr(rest);
+  // Haptischer Countdown: einmal je Sekundenwechsel bei 5, 4, 3, 2, 1
+  const sekunde = Math.ceil(rest / 1000);
+  if (sekunde !== letzteSekunde) {
+    letzteSekunde = sekunde;
+    if (sekunde <= HAPTIK_AB_SEKUNDE) haptik();
+  }
 }
 
 // Linke Hälfte = richtig, rechte Hälfte = weiter. Gewertet wird die ganze
@@ -327,6 +335,7 @@ function beendeRunde() {
     kommentar: waehleKommentar(state.treffer.length, amZiel, sekunden),
   });
   state.phase = "rundenende";
+  haptik(true);
   pauseRest = null;
   rundenendeNeu = true;
   glocke();
@@ -440,6 +449,37 @@ function glocke() {
       oszillator.stop(t + 1.7);
     }
   }
+}
+
+// Haptische Rückmeldung. Android-Browser kennen dafür navigator.vibrate.
+// Safari auf dem iPhone kennt es nicht; dort gibt es nur einen Umweg: Ein
+// Schalter im iOS-Stil (<input type="checkbox" switch>) tickt beim Umlegen
+// spürbar. Die App legt deshalb einen unsichtbaren Schalter an und legt ihn um.
+// Das ist ein kurzes Ticken, kein kräftiges Vibrieren – mehr erlaubt iOS
+// einer Webseite nicht. Kennt ein Gerät beides nicht, passiert nichts.
+function haptik(lang = false) {
+  try {
+    if (navigator.vibrate) {
+      navigator.vibrate(lang ? [200, 80, 200] : 70);
+      return;
+    }
+    const tick = () => {
+      const label = document.createElement("label");
+      label.style.display = "none";
+      const schalter = document.createElement("input");
+      schalter.type = "checkbox";
+      schalter.setAttribute("switch", "");
+      label.appendChild(schalter);
+      document.head.appendChild(label);
+      label.click();
+      label.remove();
+    };
+    tick();
+    if (lang) {
+      setTimeout(tick, 120);
+      setTimeout(tick, 240);
+    }
+  } catch {}
 }
 
 // Hält den Bildschirm an, solange gespielt wird – sonst sperrt sich das Handy

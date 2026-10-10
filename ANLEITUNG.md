@@ -63,6 +63,11 @@ Vorbild ist iOS im dunklen Modus, damit sich die App auf dem iPhone wie eine ein
 - **Neuladen:** Der Stapel wird beim Laden neu gemischt, damit nach einem Neuladen mitten in der Runde nicht dieselben Karten wiederkommen.
 - **Spielstand:** Der kurze Spielstand nennt immer beide Teamnamen. In der Stechrunde zeigt er deren Zähler und ist mit „Stechrunde“ beschriftet.
 
+### Haptischer Countdown
+- In den letzten 5 Sekunden einer Runde gibt das Handy einmal pro Sekunde eine haptische Rückmeldung, am Rundenende eine längere.
+- Android-Browser vibrieren über `navigator.vibrate`. Safari auf dem iPhone unterstützt das nicht; dort nutzt die App einen Umweg über einen unsichtbaren iOS-Schalter, der beim Umlegen kurz tickt. Ob das auf dem eigenen Gerät spürbar ist, muss man ausprobieren.
+- Der Glockenton am Rundenende ist eingebaut, war auf dem iPhone bisher aber nicht zu hören. Die Fehlersuche ist zurückgestellt.
+
 ### Kommentar zur Runde
 - Am Rundenende steht unter „Zeit um!“ ein kurzer, lustiger Spruch, der zur Zahl der gewerteten Karten passt (sechs Stufen von 0 bis 9 und mehr).
 - Innerhalb eines Spiels wiederholt sich ein Spruch erst, wenn alle seiner Stufe gefallen sind.
