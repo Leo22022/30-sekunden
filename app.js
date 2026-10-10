@@ -657,7 +657,7 @@ document.addEventListener("pointerdown", (ereignis) => {
 
 async function init() {
   try {
-    const antwort = await fetch("data/begriffe.json");
+    const antwort = await fetch("data/begriffe.json", { cache: "no-cache" });
     const liste = await antwort.json();
     begriffe = new Map(liste.map((eintrag) => [eintrag.id, eintrag]));
   } catch {
