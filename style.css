@@ -55,6 +55,9 @@ body {
   margin: 0 auto;
   /* env(safe-area-…): Abstand zu Dynamic Island oben und Home-Balken unten */
   padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  /* im Querformat liegt die Dynamic Island an der Seite */
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -148,7 +151,7 @@ h2 {
 .ecke {
   position: absolute;
   top: calc(16px + env(safe-area-inset-top));
-  right: 16px;
+  right: max(16px, env(safe-area-inset-right));
 }
 
 /* ---------- Einstellungen ---------- */
@@ -264,7 +267,9 @@ h2 {
 .runde {
   justify-content: flex-start;
   gap: 0;
-  padding: 0;
+  /* Uhr und Karte bleiben neben der Dynamic Island, die Tipp-Hälften reichen bis zum Rand */
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  max-width: none; /* die Tipp-Hälften gehen über die ganze Breite */
   height: 100dvh;
   overflow: hidden;
   /* Uhr und Karte liegen über den beiden Tipp-Hälften und lassen Berührungen durch */
@@ -355,6 +360,7 @@ h2 {
   position: relative;
   list-style: none;
   width: calc(100% - 32px);
+  max-width: 800px;
   /* etwas oberhalb der Mitte: unten bleibt Platz für die Daumen */
   margin: auto 16px;
   top: -4dvh;
@@ -433,6 +439,15 @@ h2 {
   background: var(--akzent);
   color: var(--grund);
   font-weight: 800;
+}
+
+.kopf,
+.liste {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Mit Kartenliste rückt der Kopf zusammen, damit die Liste Platz hat */
@@ -533,6 +548,8 @@ h2 {
   max-width: 520px;
   margin: 0 auto;
   padding: calc(16px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -647,6 +664,179 @@ h2 {
   }
   100% {
     transform: rotate(0);
+  }
+}
+
+/* ---------- Querformat am Handy ----------
+   Greift nur bei wenig Höhe. Ein Tablet oder Laptop im Querformat hat genug
+   Platz und behält die normale Anordnung. */
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .screen {
+    max-width: 800px;
+    gap: 10px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 2.2rem;
+  }
+  .glocke {
+    font-size: 2.6rem;
+  }
+  .knopf.gross {
+    font-size: 1.1rem;
+    padding: 13px 20px;
+  }
+  /* Knöpfe nebeneinander statt untereinander */
+  .knoepfe {
+    flex-direction: row;
+    margin-top: 4px;
+  }
+  .knoepfe .knopf.gross {
+    flex: 1;
+  }
+
+  /* Einstellungen: beide Teams nebeneinander */
+  .einstellungen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    align-content: center;
+  }
+  .einstellungen h1,
+  .einstellungen .ziele,
+  .einstellungen .knopf {
+    grid-column: 1 / -1;
+  }
+  .einstellungen .unter {
+    display: none;
+  }
+  .ziele {
+    margin: 2px 0;
+  }
+  .feld input,
+  .ziel span {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  /* "Team X ist dran" in einer Zeile */
+  .bereit h2 br {
+    display: none;
+  }
+  .bereit .hinweis:last-child {
+    margin-top: 8px;
+  }
+  .countdown .zahl {
+    font-size: min(12rem, 55dvh);
+  }
+
+  /* Runde: die Begriffe stehen nebeneinander statt untereinander */
+  .runde {
+    max-width: none;
+  }
+  .uhr {
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+  .uhr-zeile {
+    margin-top: 2px;
+  }
+  .uhr-zeile strong {
+    font-size: 2rem;
+  }
+  .karte {
+    display: flex;
+    top: -3dvh;
+    padding: 6px 4px;
+  }
+  .karte li {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px 12px;
+    font-size: clamp(1.15rem, 3.1vw, 1.7rem);
+    border-bottom: 0;
+    border-right: 1px solid var(--linie);
+  }
+  .karte li:last-child {
+    border-right: 0;
+  }
+  .haelfte {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    font-size: 1.15rem;
+  }
+
+  /* Rundenende: links Ergebnis und nächster Schritt, rechts die Kartenliste */
+  .rundenende.mit-karten {
+    display: grid;
+    grid-template-columns: minmax(210px, 1fr) 1.7fr;
+    grid-template-rows: auto 1fr;
+    column-gap: 20px;
+    align-items: start;
+  }
+  .rundenende.mit-karten .kopf {
+    grid-area: 1 / 1;
+    position: sticky;
+    top: calc(12px + env(safe-area-inset-top));
+    gap: 6px;
+  }
+  .rundenende.mit-karten .fuss {
+    grid-area: 2 / 1;
+    align-self: end;
+    padding-top: 12px;
+  }
+  .rundenende.mit-karten .liste {
+    grid-area: 1 / 2 / span 2;
+    gap: 8px;
+  }
+  .rundenende.mit-karten .glocke {
+    font-size: 2.2rem;
+  }
+  .rundenende.mit-karten h2 {
+    font-size: 1.8rem;
+  }
+  /* so hoch wie der Log-Knopf in der Ecke, damit die Liste erst darunter beginnt */
+  .frage {
+    align-self: flex-start;
+    min-height: 44px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+  }
+  .weiterreichen b {
+    font-size: 1.5rem;
+  }
+  /* Ohne Kartenliste: Hinweis und Knopf nebeneinander, das spart eine Zeile */
+  .rundenende:not(.mit-karten) .fuss {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 8px;
+  }
+  .rundenende:not(.mit-karten) .fuss > * {
+    flex: 1;
+  }
+
+  /* Punktestand: beide Teams nebeneinander */
+  .stand {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .stand small {
+    grid-column: 1 / -1;
+  }
+  .stand-zeile {
+    padding: 8px 16px;
+  }
+
+  .log {
+    max-width: 800px;
   }
 }
 

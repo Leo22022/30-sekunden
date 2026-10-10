@@ -6,6 +6,7 @@ Eine mobile Web-App für ein Team-Erklärspiel (ähnlich Tabu / 30 Seconds). Ein
 ## Technik
 - HTML, CSS und Vanilla JavaScript, kein Framework.
 - Mobile-first, Bedienung mit einer Hand im Hochformat.
+- Querformat wird ebenfalls unterstützt: Die Begriffe einer Karte stehen dann nebeneinander, am Rundenende steht die Kartenliste rechts neben Ergebnis und Weiter-Knopf. Die Tipp-Hälften bleiben links „Richtig“ und rechts „Weiter“.
 - Begriffe in der lokalen Datei `data/begriffe.json`.
 - Spielstand in `localStorage`, damit ein Spiel nach Neuladen nicht verloren geht. Eine angefangene Runde zählt nach dem Neuladen nicht.
 - Sound (Glöckchen) über die Web Audio API.

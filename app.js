@@ -412,7 +412,7 @@ const ANSICHTEN = {
          <h2>Bereit?</h2>
          <p class="hinweis">Tippen startet den Countdown · ${sekunden} Sekunden</p>`
       : `<p class="klein">${rundenTitel()}${letzteChance ? " · letzte Chance" : ""}</p>
-         <h2>${name(state.amZug)}<br>ist dran</h2>
+         <h2>${name(state.amZug)} <br>ist dran</h2>
          ${letzteChance ? `<p class="hinweis"><b>${name(0)}</b> hat das Ziel erreicht.</p>` : ""}
          <p class="spielstand">${standKurz()}</p>
          <p class="hinweis">Tippen zum Bestätigen</p>`;
@@ -470,11 +470,13 @@ const ANSICHTEN = {
     return `
       <section class="screen rundenende team-${state.amZug} ${anzahl ? "mit-karten" : ""}">
         <div class="ecke">${LOG_KNOPF}</div>
-        <div class="glocke">🔔</div>
-        <h2>${amZiel ? "Ziel erreicht!" : "Zeit um!"}</h2>
-        <p class="klein">${name(state.amZug)} · +${anzahl} ${anzahl === 1 ? "Karte" : "Karten"}</p>
-        <p class="spielstand">${standKurz()}</p>
-        ${begriffListe}
+        <div class="kopf">
+          <div class="glocke">🔔</div>
+          <h2>${amZiel ? "Ziel erreicht!" : "Zeit um!"}</h2>
+          <p class="klein">${name(state.amZug)} · +${anzahl} ${anzahl === 1 ? "Karte" : "Karten"}</p>
+          <p class="spielstand">${standKurz()}</p>
+        </div>
+        <div class="liste">${begriffListe}</div>
         <footer class="fuss">
           ${weiter[0] ? `<p class="weiterreichen team-${schritt.amZug}">${weiter[0]}</p>` : ""}
           <button class="knopf gross" data-aktion="nach-runde" id="weiter-knopf" disabled>${weiter[1]}</button>
