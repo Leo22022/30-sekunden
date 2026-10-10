@@ -370,11 +370,10 @@ function standKurz() {
   return `<span class="team-0">${punkte[0]}</span> : <span class="team-1">${punkte[1]}</span>`;
 }
 
-const GLOCKE = `<svg class="glocke" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"
+const GLOCKE = `<svg class="glocke" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M12 3v1.5"/><path d="M6.5 16v-5a5.5 5.5 0 0 1 11 0v5l1.5 2.2h-14z"/><path d="M10.2 20.4a1.9 1.9 0 0 0 3.6 0"/>
 </svg>`;
-const ZIER = `<div class="zier" aria-hidden="true">◆</div>`;
 const LOG_KNOPF = `<button class="knopf leise" data-aktion="log">Log</button>`;
 
 const ANSICHTEN = {
@@ -390,7 +389,7 @@ const ANSICHTEN = {
       <section class="screen einstellungen">
         <h1><b>30</b> Sekunden</h1>
         <p class="unter">Erklären, raten, weiterreichen.</p>
-        ${state.teams
+        <div class="gruppe">${state.teams
           .map(
             (team, i) => `
               <label class="feld team-${i}">
@@ -399,7 +398,7 @@ const ANSICHTEN = {
                        placeholder="Team ${i + 1}" value="${esc(team.name)}">
               </label>`
           )
-          .join("")}
+          .join("")}</div>
         <fieldset class="ziele">
           <legend>Zielpunktzahl</legend>
           <div>${ziele}</div>
@@ -510,7 +509,6 @@ const ANSICHTEN = {
       : `Beide Teams haben ${state.ziel} Punkte erreicht.`;
     return `
       <section class="screen stechrunde">
-        ${ZIER}
         <h2>${rundenTitel()}</h2>
         <p class="hinweis">${text}</p>
         <p class="hinweis">Beide starten bei 0 und spielen je <b>${STECH_SEKUNDEN} Sekunden</b>.
@@ -528,7 +526,6 @@ const ANSICHTEN = {
       : "";
     return `
       <section class="screen ende team-${state.gewinner}">
-        ${ZIER}
         <p class="klein">Gewonnen hat</p>
         <h2>${name(state.gewinner)}</h2>
         ${standHtml()}
@@ -590,8 +587,8 @@ function zeigeLog() {
   overlay.innerHTML = `
     <div class="log">
       <header>
-        <h3>Begriffe-Log</h3>
-        <button class="knopf leise" data-aktion="log-zu">Schließen</button>
+        <h3>Log</h3>
+        <button class="knopf leise" data-aktion="log-zu">Fertig</button>
       </header>
       ${eintraege.length ? `<ol>${eintraege.join("")}</ol>` : `<p class="hinweis">Noch keine Runde gespielt.</p>`}
       ${state.phase === "ende" ? "" : `<button class="knopf leise warn" data-aktion="abbrechen">Spiel abbrechen</button>`}
